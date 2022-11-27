@@ -14,18 +14,18 @@ function toLines(multiline: string): string[] {
     return multiline.match(/[^;]+/g) || []
 }
 
-function removeBrackets(line: string): string {
-    const regex = /[a-z]\([+\-]?\d+\)/i
-    const matches = line.match(regex)
-    if (matches == null) return line
+function unbracketCommandValue(line: string): string {
+    const regex = /([a-z])\(([+\-]?\d+)\)/gi
 
     let newLine = line
-    for (const match of matches) {
-        const alpha = match[0]
-        const value = match.slice(2, -1)
-        newLine = newLine.replace(match, alpha + value)
-    }
+    while (true) {
+        const match = regex.exec(line)
+        if (match === null) break
 
+        const prefix = match[1]
+        const value = match[2]
+        newLine = newLine.replace(match[0], prefix + value)
+    }
     return newLine
 }
 
@@ -48,7 +48,7 @@ function printInstruction(instruction: Instruction) {
     console.log(line)
 }
 
-const code = readFileSync("D:\\Games\\Факторка\\translator\\source.txt", { encoding: "utf8", flag: "r" });
+const code = readFileSync("D:\\Games\\Факторка\\translator\\build\\main.fasm", { encoding: "utf8", flag: "r" });
 `
  1 => W(1);
  __dwl4: R(1) => (U1 M1); 2 => (U1 M2); (U1 G3) => W(1); (R(1) C4) J(__dwl4);
@@ -56,7 +56,7 @@ const code = readFileSync("D:\\Games\\Факторка\\translator\\source.txt",
 
 const lines = toLines(code)
     .map(removeComment)
-    .map(removeBrackets)
+    .map(unbracketCommandValue)
     .map(wrapConstant)
     .map(s => s.trim())
     .filter(s => s.length > 0)
